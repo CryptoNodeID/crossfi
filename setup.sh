@@ -82,7 +82,7 @@ tee create_validator.sh > /dev/null <<EOF
 #!/bin/bash
 ${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \
   --amount=9990000000000000000000mpx \
-  --pubkey=$(${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tendermint show-validator) \
+  --pubkey=\$(${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tendermint show-validator) \
   --moniker="$VALIDATOR_KEY_NAME" \
   --details="CryptoNodeID. Crypto Validator Node Education Channel" \
   --website="https://t.me/CryptoNodeID" \
