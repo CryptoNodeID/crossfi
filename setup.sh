@@ -80,26 +80,26 @@ else
 fi
 tee create_validator.sh > /dev/null <<EOF
 #!/bin/bash
-${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \
-  --amount=9990000000000000000000mpx \
-  --pubkey=\$(${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tendermint show-validator) \
-  --moniker="$VALIDATOR_KEY_NAME" \
-  --details="CryptoNodeID. Crypto Validator Node Education Channel" \
-  --website="https://t.me/CryptoNodeID" \
-  --chain-id="crossfi-evm-testnet-1" \
-  --commission-rate="0.05" \
-  --commission-max-rate="0.20" \
-  --commission-max-change-rate="0.01" \
-  --min-self-delegation="1000000" \
-  --gas="auto" \
-  --gas-prices="10000000000000mpx" \
-  --gas-adjustment=1.5 \
+${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
+  --amount=9900000000000000000000mpx \\
+  --pubkey=\$(${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tendermint show-validator) \\
+  --moniker="$VALIDATOR_KEY_NAME" \\
+  --details="CryptoNodeID. Crypto Validator Node Education Channel" \\
+  --website="https://t.me/CryptoNodeID" \\
+  --chain-id="crossfi-evm-testnet-1" \\
+  --commission-rate="0.05" \\
+  --commission-max-rate="0.20" \\
+  --commission-max-change-rate="0.01" \\
+  --min-self-delegation="1000000" \\
+  --gas="auto" \\
+  --gas-prices="10000000000000mpx" \\
+  --gas-adjustment=1.5 \\
   --from=$VALIDATOR_KEY_NAME
 EOF
 chmod +x create_validator.sh
 tee unjail_validator.sh > /dev/null <<EOF
 #!/bin/bash
-${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tx slashing unjail \
+${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tx slashing unjail \\
   --from=$VALIDATOR_KEY_NAME
 EOF
 chmod +x unjail_validator.sh
