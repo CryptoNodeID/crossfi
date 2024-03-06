@@ -56,6 +56,7 @@ else
     ${DAEMON_NAME} --home ${DAEMON_HOME} keys add $VALIDATOR_KEY_NAME
 fi
 ${DAEMON_NAME} --home ${DAEMON_HOME} keys list
+${DAEMON_NAME} --home ${DAEMON_HOME} init $VALIDATOR_KEY_NAME --chain-id crossfi-evm-testnet-1
 
 # Helper scripts
 cd ${INSTALLATION_DIR}
