@@ -34,11 +34,14 @@ fi
 source ~/.profile
 
 sed -i \
-  -e 's|^pruning *=.*|pruning = "nothing"|' \
+  -e 's|^pruning *=.*|pruning = "custom"|' \
+  -e 's|^pruning-keep-recent *=.*|pruning-keep-recent = "100"|' \
+  -e 's|^pruning-keep-every *=.*|pruning-keep-every = "0"|' \
+  -e 's|^pruning-interval *=.*|pruning-interval = "10"|' \
   ${DAEMON_HOME}/config/app.toml
 
-mkdir -p $DAEMON_HOME/cosmovisor/genesis/bin && mkdir -p $DAEMON_HOME/cosmovisor/upgrades
-cp $HOME/appl/bin/${DAEMON_NAME} $DAEMON_HOME/cosmovisor/genesis/bin
+mkdir -p ${DAEMON_HOME}/cosmovisor/genesis/bin && mkdir -p ${DAEMON_HOME}/cosmovisor/upgrades
+cp ${INSTALLATION_DIR}/${DAEMON_NAME} ${DAEMON_HOME}/cosmovisor/genesis/bin
 sudo ln -s ${DAEMON_HOME}/cosmovisor/genesis ${DAEMON_HOME}/cosmovisor/current -f
 sudo ln -s ${DAEMON_HOME}/cosmovisor/current/bin/${DAEMON_NAME} /usr/local/bin/${DAEMON_NAME} -f
 
@@ -81,9 +84,9 @@ else
 fi
 tee create_validator.sh > /dev/null <<EOF
 #!/bin/bash
-${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
+${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
   --amount=9900000000000000000000mpx \\
-  --pubkey=\$(${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tendermint show-validator) \\
+  --pubkey=\$(${DAEMON_NAME} --home ${DAEMON_HOME} tendermint show-validator) \\
   --moniker="$VALIDATOR_KEY_NAME" \\
   --details="CryptoNodeID. Crypto Validator Node Education Channel" \\
   --website="https://t.me/CryptoNodeID" \\
@@ -100,13 +103,13 @@ EOF
 chmod +x create_validator.sh
 tee unjail_validator.sh > /dev/null <<EOF
 #!/bin/bash
-${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} tx slashing unjail \\
+${DAEMON_NAME} --home ${DAEMON_HOME} tx slashing unjail \\
   --from=$VALIDATOR_KEY_NAME
 EOF
 chmod +x unjail_validator.sh
 tee check_validator.sh > /dev/null <<EOF
 #!/bin/bash
-${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} query tendermint-validator-set
+${DAEMON_NAME} --home ${DAEMON_HOME} query tendermint-validator-set
 EOF
 chmod +x check_validator.sh
 tee start_crossfi.sh > /dev/null <<EOF
