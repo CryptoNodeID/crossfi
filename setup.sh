@@ -4,6 +4,8 @@ DAEMON_HOME=$HOME/appl/testnet
 SERVICE_NAME=crossfi-testnet
 INSTALLATION_DIR=$(dirname "$(realpath "$0")")
 
+cd ${INSTALLATION_DIR}
+
 wget https://github.com/crossfichain/crossfi-node/releases/download/v0.3.0-prebuild3/crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz && tar -xf crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz
 git clone https://github.com/crossfichain/testnet.git
 
@@ -22,8 +24,8 @@ fi
 if ! grep -q 'export DAEMON_HOME=${DAEMON_HOME}' ~/.profile; then
     echo 'export DAEMON_HOME=${DAEMON_HOME}' >> ~/.profile
 fi
-if ! grep -q 'export DAEMON_ALLOW_DOWNLOAD_BINARIES=false' ~/.profile; then
-    echo 'export DAEMON_ALLOW_DOWNLOAD_BINARIES=false' >> ~/.profile
+if ! grep -q 'export DAEMON_ALLOW_DOWNLOAD_BINARIES=true' ~/.profile; then
+    echo 'export DAEMON_ALLOW_DOWNLOAD_BINARIES=true' >> ~/.profile
 fi
 if ! grep -q 'export DAEMON_RESTART_AFTER_UPGRADE=true' ~/.profile; then
     echo 'export DAEMON_RESTART_AFTER_UPGRADE=true' >> ~/.profile
@@ -75,7 +77,7 @@ if [[ "$use_custom_port" =~ ^[Yy](es)?$ ]]; then
     sed -i.bak -e "s%:1317%:${port_prefix}317%g; s%:8080%:${port_prefix}080%g; s%:9090%:${port_prefix}090%g; s%:9091%:${port_prefix}091%g; s%:8545%:${port_prefix}545%g; s%:8546%:${port_prefix}546%g; s%:6065%:${port_prefix}065%g" ${DAEMON_HOME}/config/app.toml
     sed -i.bak -e "s%:26658%:${port_prefix}658%g; s%:26657%:${port_prefix}657%g; s%:6060%:${port_prefix}060%g; s%:26656%:${port_prefix}656%g; s%:26660%:${port_prefix}660%g" ${DAEMON_HOME}/config/config.toml
 fi
-rm -rf babylon check_balance.sh create_validator.sh unjail_validator.sh check_validator.sh start_babylon.sh check_log.sh list_keys.sh
+rm -rf crossfid check_balance.sh create_validator.sh unjail_validator.sh check_validator.sh start_crossfid.sh check_log.sh list_keys.sh
 echo "${DAEMON_NAME} keys list" > list_keys.sh && chmod +x list_keys.sh
 if [[ "$use_custom_port" =~ ^[Yy](es)?$ ]]; then
     echo "${DAEMON_NAME} q bank balances --node=tcp://localhost:${port_prefix}657 \$(${DAEMON_NAME} keys show $VALIDATOR_KEY_NAME -a)" > check_balance.sh && chmod +x check_balance.sh
