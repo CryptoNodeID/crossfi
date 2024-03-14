@@ -16,7 +16,7 @@ if ! command -v cosmovisor &> /dev/null; then
     wget https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2Fv1.5.0/cosmovisor-v1.5.0-linux-amd64.tar.gz
     tar -xvzf cosmovisor-v1.5.0-linux-amd64.tar.gz
     rm cosmovisor-v1.5.0-linux-amd64.tar.gz
-    sudo cp cosmovisor /usr/local/bin
+    mv cosmovisor bin
 fi
 if ! grep -q 'export DAEMON_NAME=${DAEMON_NAME}' ~/.profile; then
     echo 'export DAEMON_NAME=${DAEMON_NAME}' >> ~/.profile
@@ -42,8 +42,8 @@ sed -i \
   -e 's|^pruning-interval *=.*|pruning-interval = "10"|' \
   ${DAEMON_HOME}/config/app.toml
 
-mkdir -p ${DAEMON_HOME}/cosmovisor/genesis/bin && mkdir -p ${DAEMON_HOME}/cosmovisor/upgrades
-cp ${INSTALLATION_DIR}/${DAEMON_NAME} ${DAEMON_HOME}/cosmovisor/genesis/bin
+cp ${INSTALLATION_DIR}/bin/${DAEMON_NAME} ${DAEMON_HOME}/cosmovisor/genesis/bin
+sudo ln -s ${INSTALLATION_DIR}/bin/cosmovisor /usr/local/bin/cosmovisor -f
 sudo ln -s ${DAEMON_HOME}/cosmovisor/genesis ${DAEMON_HOME}/cosmovisor/current -f
 sudo ln -s ${DAEMON_HOME}/cosmovisor/current/bin/${DAEMON_NAME} /usr/local/bin/${DAEMON_NAME} -f
 
@@ -61,7 +61,6 @@ else
     ${DAEMON_NAME} --home ${DAEMON_HOME} keys add $VALIDATOR_KEY_NAME
 fi
 ${DAEMON_NAME} --home ${DAEMON_HOME} keys list
-${DAEMON_NAME} --home ${DAEMON_HOME} init $VALIDATOR_KEY_NAME --chain-id crossfi-evm-testnet-1
 
 # Helper scripts
 cd ${INSTALLATION_DIR}
@@ -90,8 +89,9 @@ ${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
   --amount=9900000000000000000000mpx \\
   --pubkey=\$(${DAEMON_NAME} --home ${DAEMON_HOME} tendermint show-validator) \\
   --moniker="$VALIDATOR_KEY_NAME" \\
-  --details="CryptoNodeID. Crypto Validator Node Education Channel" \\
-  --website="https://t.me/CryptoNodeID" \\
+  --details="CryptoNode.ID Crypto Validator Node Education Channel" \\
+  --website="https://cryptonode.id" \\
+  --security-contact="https://t.me/CryptoNodeID"
   --chain-id="crossfi-evm-testnet-1" \\
   --commission-rate="0.05" \\
   --commission-max-rate="0.20" \\
