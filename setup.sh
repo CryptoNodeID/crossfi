@@ -3,6 +3,7 @@ DAEMON_NAME=crossfid
 DAEMON_HOME=$HOME/appl/testnet
 SERVICE_NAME=crossfi-testnet
 INSTALLATION_DIR=$(dirname "$(realpath "$0")")
+SNAP_RPC="https://crossfi-testnet-rpc.cryptonode.id:443"
 
 cd ${INSTALLATION_DIR}
 
@@ -18,20 +19,20 @@ if ! command -v cosmovisor &> /dev/null; then
     rm cosmovisor-v1.5.0-linux-amd64.tar.gz
     mv cosmovisor bin
 fi
-if ! grep -q 'export DAEMON_NAME=${DAEMON_NAME}' ~/.profile; then
-    echo 'export DAEMON_NAME=${DAEMON_NAME}' >> ~/.profile
+if ! grep -q "export DAEMON_NAME=${DAEMON_NAME}" ~/.profile; then
+    echo "export DAEMON_NAME=${DAEMON_NAME}" >> ~/.profile
 fi
-if ! grep -q 'export DAEMON_HOME=${DAEMON_HOME}' ~/.profile; then
-    echo 'export DAEMON_HOME=${DAEMON_HOME}' >> ~/.profile
+if ! grep -q "export DAEMON_HOME=${DAEMON_HOME}" ~/.profile; then
+    echo "export DAEMON_HOME=${DAEMON_HOME}" >> ~/.profile
 fi
-if ! grep -q 'export DAEMON_ALLOW_DOWNLOAD_BINARIES=true' ~/.profile; then
-    echo 'export DAEMON_ALLOW_DOWNLOAD_BINARIES=true' >> ~/.profile
+if ! grep -q "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" ~/.profile; then
+    echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> ~/.profile
 fi
-if ! grep -q 'export DAEMON_RESTART_AFTER_UPGRADE=true' ~/.profile; then
-    echo 'export DAEMON_RESTART_AFTER_UPGRADE=true' >> ~/.profile
+if ! grep -q "export DAEMON_RESTART_AFTER_UPGRADE=true" ~/.profile; then
+    echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> ~/.profile
 fi
-if ! grep -q 'export DAEMON_LOG_BUFFER_SIZE=512' ~/.profile; then
-    echo 'export DAEMON_LOG_BUFFER_SIZE=512' >> ~/.profile
+if ! grep -q "export DAEMON_LOG_BUFFER_SIZE=512" ~/.profile; then
+    echo "export DAEMON_LOG_BUFFER_SIZE=512" >> ~/.profile
 fi
 source ~/.profile
 
@@ -62,8 +63,13 @@ else
 fi
 ${DAEMON_NAME} --home ${DAEMON_HOME} keys list
 
+LATEST_HEIGHT=$(curl -s $SNAP_RPC/block | jq -r .result.block.header.height);
+BLOCK_HEIGHT=$((LATEST_HEIGHT - 1000));
+TRUST_HASH=$(curl -s "$SNAP_RPC/block?height=$BLOCK_HEIGHT" | jq -r .result.block_id.hash) 
+echo $LATEST_HEIGHT $BLOCK_HEIGHT $TRUST_HASH && sleep 2
 # Helper scripts
-cd ${INSTALLATION_DIR}
+mkdir ${INSTALLATION_DIR}/scripts
+cd ${INSTALLATION_DIR}/scripts
 rm -rf list_keys.sh check_balance.sh create_validator.sh unjail_validator.sh check_validator.sh start_crossfi.sh check_log.sh
 echo "${DAEMON_NAME} --home ${DAEMON_HOME} keys list" > list_keys.sh && chmod +x list_keys.sh
 read -p "Do you want to use custom port number prefix (y/N)? " use_custom_port
@@ -83,6 +89,13 @@ if [[ "$use_custom_port" =~ ^[Yy](es)?$ ]]; then
 else
     echo "${DAEMON_NAME} q bank balances \$(${DAEMON_NAME} keys show $VALIDATOR_KEY_NAME -a)" > check_balance.sh && chmod +x check_balance.sh
 fi
+sed -i \
+  -e "s|^  enable *=.*|  enable = "true"|" \
+  -e "s|^  rpc_servers *=.*|  rpc_servers = \"$SNAP_RPC,$SNAP_RPC\"|" \
+  -e "s|^  trust_height *=.*|  trust_height = $BLOCK_HEIGHT|" \
+  -e "s|^  trust_hash *=.*|  trust_hash = \"$TRUST_HASH\"|" \
+  -e "s|^  seeds *=.*|  seeds = \"\"|" \
+  ${DAEMON_HOME}/config/config.toml
 tee create_validator.sh > /dev/null <<EOF
 #!/bin/bash
 ${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
@@ -156,5 +169,6 @@ else
 fi
 
 #Cleanup
+cd ${INSTALLATION_DIR}
 rm -f crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz
 rm -f README.md CHANGELOG.md LICENSE readme.md
