@@ -1,6 +1,6 @@
 #!/bin/bash
 DAEMON_NAME=crossfid
-DAEMON_HOME=$HOME/appl/testnet
+DAEMON_HOME=$HOME/.mineplex-chain
 SERVICE_NAME=crossfi-testnet
 INSTALLATION_DIR=$(dirname "$(realpath "$0")")
 SNAP_RPC="https://crossfi-testnet-rpc.cryptonode.id:443"
@@ -9,6 +9,7 @@ cd ${INSTALLATION_DIR}
 
 wget https://github.com/crossfichain/crossfi-node/releases/download/v0.3.0-prebuild3/crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz && tar -xf crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz
 git clone https://github.com/crossfichain/testnet.git
+mv testnet ${DAEMON_HOME}
 
 mkdir -p ${DAEMON_HOME}/cosmovisor/genesis/bin
 mkdir -p ${DAEMON_HOME}/cosmovisor/upgrades
