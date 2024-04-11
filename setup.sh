@@ -7,9 +7,26 @@ SNAP_RPC="https://crossfi-testnet-rpc.cryptonode.id:443"
 
 cd ${INSTALLATION_DIR}
 
-wget https://github.com/crossfichain/crossfi-node/releases/download/v0.3.0-prebuild3/crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz && tar -xf crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz
-git clone https://github.com/crossfichain/testnet.git
-mv testnet ${DAEMON_HOME}
+mkdir -p ${INSTALLATION_DIR}/bin
+read -p "Enter 'testnet' or 'mainnet': " network
+network=$(echo "$network" | tr '[:upper:]' '[:lower:]')
+if [ "$network" == "testnet" ]; then
+  wget https://github.com/crossfichain/crossfi-node/releases/download/v0.3.0-prebuild3/crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz && tar -xf crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz
+  mv crossfid bin/${DAEMON_NAME}
+  git clone https://github.com/crossfichain/testnet.git
+  SERVICE_NAME=crossfi-testnet
+  CHAIN_ID='crossfi-evm-testnet-1'
+  SNAP_RPC="https://crossfi-testnet-rpc.cryptonode.id:443"
+  mv testnet ${DAEMON_HOME}
+else
+  wget https://github.com/crossfichain/crossfi-node/releases/download/v0.1.1/mineplex-2-node._v0.1.1_linux_amd64.tar.gz && tar -xf mineplex-2-node._v0.1.1_linux_amd64.tar.gz
+  mv mineplex-chaind bin/${DAEMON_NAME}
+  git clone https://github.com/crossfichain/mainnet.git
+  SERVICE_NAME=crossfi-mainnet
+  CHAIN_ID='crossfi-mainnet-1'
+  SNAP_RPC="https://crossfi-mainnet-rpc.cryptonode.id:443"
+  mv mainnet ${DAEMON_HOME}
+fi
 
 mkdir -p ${DAEMON_HOME}/cosmovisor/genesis/bin
 mkdir -p ${DAEMON_HOME}/cosmovisor/upgrades
@@ -18,7 +35,7 @@ if ! command -v cosmovisor &> /dev/null; then
     wget https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2Fv1.5.0/cosmovisor-v1.5.0-linux-amd64.tar.gz
     tar -xvzf cosmovisor-v1.5.0-linux-amd64.tar.gz
     rm cosmovisor-v1.5.0-linux-amd64.tar.gz
-    mv cosmovisor bin
+    mv cosmovisor bin/cosmovisor
 fi
 if ! grep -q "export DAEMON_NAME=${DAEMON_NAME}" ~/.profile; then
     echo "export DAEMON_NAME=${DAEMON_NAME}" >> ~/.profile
@@ -68,6 +85,7 @@ LATEST_HEIGHT=$(curl -s $SNAP_RPC/block | jq -r .result.block.header.height);
 BLOCK_HEIGHT=$((LATEST_HEIGHT - 1000));
 TRUST_HASH=$(curl -s "$SNAP_RPC/block?height=$BLOCK_HEIGHT" | jq -r .result.block_id.hash) 
 echo $LATEST_HEIGHT $BLOCK_HEIGHT $TRUST_HASH && sleep 2
+
 # Helper scripts
 mkdir ${INSTALLATION_DIR}/scripts
 cd ${INSTALLATION_DIR}/scripts
@@ -90,13 +108,7 @@ if [[ "$use_custom_port" =~ ^[Yy](es)?$ ]]; then
 else
     echo "${DAEMON_NAME} q bank balances \$(${DAEMON_NAME} keys show $VALIDATOR_KEY_NAME -a)" > check_balance.sh && chmod +x check_balance.sh
 fi
-sed -i \
-  -e "s|^  enable *=.*|  enable = "true"|" \
-  -e "s|^  rpc_servers *=.*|  rpc_servers = \"$SNAP_RPC,$SNAP_RPC\"|" \
-  -e "s|^  trust_height *=.*|  trust_height = $BLOCK_HEIGHT|" \
-  -e "s|^  trust_hash *=.*|  trust_hash = \"$TRUST_HASH\"|" \
-  -e "s|^  seeds *=.*|  seeds = \"\"|" \
-  ${DAEMON_HOME}/config/config.toml
+
 tee create_validator.sh > /dev/null <<EOF
 #!/bin/bash
 ${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
@@ -105,14 +117,14 @@ ${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
   --moniker="$VALIDATOR_KEY_NAME" \\
   --details="CryptoNode.ID Crypto Validator Node Education Channel" \\
   --website="https://cryptonode.id" \\
-  --security-contact="https://t.me/CryptoNodeID"
-  --chain-id="crossfi-evm-testnet-1" \\
+  --security-contact="admin@cryptonode.id" \\
+  --chain-id="$CHAIN_ID" \\
   --commission-rate="0.05" \\
   --commission-max-rate="0.20" \\
   --commission-max-change-rate="0.01" \\
   --min-self-delegation="1000000" \\
   --gas="auto" \\
-  --gas-prices="10000000000000mpx" \\
+  --gas-prices="5000000000000mpx" \\
   --gas-adjustment=1.5 \\
   --from=$VALIDATOR_KEY_NAME
 EOF
@@ -143,7 +155,7 @@ chmod +x check_log.sh
 
 sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF  
 [Unit]
-Description=CrossFi Testnet Daemon (cosmovisor)
+Description=CrossFi ${network} Daemon (cosmovisor)
 After=network-online.target
 
 [Service]
