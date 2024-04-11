@@ -11,21 +11,54 @@ mkdir -p ${INSTALLATION_DIR}/bin
 read -p "Enter 'testnet' or 'mainnet': " network
 network=$(echo "$network" | tr '[:upper:]' '[:lower:]')
 if [ "$network" == "testnet" ]; then
+  DAEMON_NAME=crossfid-testnet
+  DAEMON_HOME=$HOME/.crossfi-testnet
   wget https://github.com/crossfichain/crossfi-node/releases/download/v0.3.0-prebuild3/crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz && tar -xf crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz
-  mv crossfid bin/${DAEMON_NAME}
+  mv bin/crossfid bin/${DAEMON_NAME}
   git clone https://github.com/crossfichain/testnet.git
   SERVICE_NAME=crossfi-testnet
   CHAIN_ID='crossfi-evm-testnet-1'
   SNAP_RPC="https://crossfi-testnet-rpc.cryptonode.id:443"
   mv testnet ${DAEMON_HOME}
+  if ! grep -q "export DAEMON_NAME_TESTNET=${DAEMON_NAME}" ~/.profile; then
+    echo "export DAEMON_NAME_TESTNET=${DAEMON_NAME}" >> ~/.profile
+  fi
+  if ! grep -q "export DAEMON_HOME_TESTNET=${DAEMON_HOME}" ~/.profile; then
+      echo "export DAEMON_HOME_TESTNET=${DAEMON_HOME}" >> ~/.profile
+  fi
+  if ! grep -q "export DAEMON_ALLOW_DOWNLOAD_BINARIES_TESTNET=true" ~/.profile; then
+      echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES_TESTNET=true" >> ~/.profile
+  fi
+  if ! grep -q "export DAEMON_RESTART_AFTER_UPGRADE_TESTNET=true" ~/.profile; then
+      echo "export DAEMON_RESTART_AFTER_UPGRADE_TESTNET=true" >> ~/.profile
+  fi
+  if ! grep -q "export DAEMON_LOG_BUFFER_SIZE_TESTNET=512" ~/.profile; then
+      echo "export DAEMON_LOG_BUFFER_SIZE_TESTNET=512" >> ~/.profile
+  fi
 else
   wget https://github.com/crossfichain/crossfi-node/releases/download/v0.1.1/mineplex-2-node._v0.1.1_linux_amd64.tar.gz && tar -xf mineplex-2-node._v0.1.1_linux_amd64.tar.gz
   mv mineplex-chaind bin/${DAEMON_NAME}
   git clone https://github.com/crossfichain/mainnet.git
   SERVICE_NAME=crossfi-mainnet
-  CHAIN_ID='crossfi-mainnet-1'
+  CHAIN_ID='mineplex-mainnet-1'
   SNAP_RPC="https://crossfi-mainnet-rpc.cryptonode.id:443"
   mv mainnet ${DAEMON_HOME}
+  if ! grep -q "export DAEMON_NAME=${DAEMON_NAME}" ~/.profile; then
+    echo "export DAEMON_NAME=${DAEMON_NAME}" >> ~/.profile
+  fi
+  if ! grep -q "export DAEMON_HOME=${DAEMON_HOME}" ~/.profile; then
+      echo "export DAEMON_HOME=${DAEMON_HOME}" >> ~/.profile
+  fi
+  if ! grep -q "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" ~/.profile; then
+      echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> ~/.profile
+  fi
+  if ! grep -q "export DAEMON_RESTART_AFTER_UPGRADE=true" ~/.profile; then
+      echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> ~/.profile
+  fi
+  if ! grep -q "export DAEMON_LOG_BUFFER_SIZE=512" ~/.profile; then
+      echo "export DAEMON_LOG_BUFFER_SIZE=512" >> ~/.profile
+  fi
+  source ~/.profile
 fi
 
 mkdir -p ${DAEMON_HOME}/cosmovisor/genesis/bin
@@ -89,8 +122,8 @@ echo $LATEST_HEIGHT $BLOCK_HEIGHT $TRUST_HASH && sleep 2
 # Helper scripts
 mkdir ${INSTALLATION_DIR}/scripts
 cd ${INSTALLATION_DIR}/scripts
-rm -rf list_keys.sh check_balance.sh create_validator.sh unjail_validator.sh check_validator.sh start_crossfi.sh check_log.sh
-echo "${DAEMON_NAME} --home ${DAEMON_HOME} keys list" > list_keys.sh && chmod +x list_keys.sh
+rm -rf list_keys_${network}.sh check_balance_${network}.sh create_validator_${network}.sh unjail_validator_${network}.sh check_validator_${network}.sh start_crossfi_${network}.sh check_log_${network}.sh
+
 read -p "Do you want to use custom port number prefix (y/N)? " use_custom_port
 if [[ "$use_custom_port" =~ ^[Yy](es)?$ ]]; then
     read -p "Enter port number prefix (max 2 digits, not exceeding 50): " port_prefix
@@ -101,20 +134,20 @@ if [[ "$use_custom_port" =~ ^[Yy](es)?$ ]]; then
     sed -i.bak -e "s%:1317%:${port_prefix}317%g; s%:8080%:${port_prefix}080%g; s%:9090%:${port_prefix}090%g; s%:9091%:${port_prefix}091%g; s%:8545%:${port_prefix}545%g; s%:8546%:${port_prefix}546%g; s%:6065%:${port_prefix}065%g" ${DAEMON_HOME}/config/app.toml
     sed -i.bak -e "s%:26658%:${port_prefix}658%g; s%:26657%:${port_prefix}657%g; s%:6060%:${port_prefix}060%g; s%:26656%:${port_prefix}656%g; s%:26660%:${port_prefix}660%g" ${DAEMON_HOME}/config/config.toml
 fi
-rm -rf crossfid check_balance.sh create_validator.sh unjail_validator.sh check_validator.sh start_crossfid.sh check_log.sh list_keys.sh
-echo "${DAEMON_NAME} keys list" > list_keys.sh && chmod +x list_keys.sh
+echo "${DAEMON_NAME} keys list" > list_keys_${network}.sh && chmod ug+x list_keys_${network}.sh
 if [[ "$use_custom_port" =~ ^[Yy](es)?$ ]]; then
-    echo "${DAEMON_NAME} q bank balances --node=tcp://localhost:${port_prefix}657 \$(${DAEMON_NAME} keys show $VALIDATOR_KEY_NAME -a)" > check_balance.sh && chmod +x check_balance.sh
+    echo "${DAEMON_NAME} q bank balances --node=tcp://localhost:${port_prefix}657 \$(${DAEMON_NAME} keys show $VALIDATOR_KEY_NAME -a)" > check_balance_${network}.sh && chmod +x check_balance_${network}.sh
 else
-    echo "${DAEMON_NAME} q bank balances \$(${DAEMON_NAME} keys show $VALIDATOR_KEY_NAME -a)" > check_balance.sh && chmod +x check_balance.sh
+    echo "${DAEMON_NAME} q bank balances \$(${DAEMON_NAME} keys show $VALIDATOR_KEY_NAME -a)" > check_balance_${network}.sh && chmod +x check_balance_${network}.sh
 fi
 
-tee create_validator.sh > /dev/null <<EOF
+tee create_validator_${network}.sh > /dev/null <<EOF
 #!/bin/bash
 ${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
   --amount=9900000000000000000000mpx \\
   --pubkey=\$(${DAEMON_NAME} --home ${DAEMON_HOME} tendermint show-validator) \\
   --moniker="$VALIDATOR_KEY_NAME" \\
+  --identity="4a8bc33cee42de0b23bbccbc84aee10fd0cdfc07" \\
   --details="CryptoNode.ID Crypto Validator Node Education Channel" \\
   --website="https://cryptonode.id" \\
   --security-contact="admin@cryptonode.id" \\
@@ -124,34 +157,36 @@ ${DAEMON_NAME} --home ${DAEMON_HOME} tx staking create-validator \\
   --commission-max-change-rate="0.01" \\
   --min-self-delegation="1000000" \\
   --gas="auto" \\
-  --gas-prices="5000000000000mpx" \\
+  --gas-prices="10000000000000mpx" \\
   --gas-adjustment=1.5 \\
   --from=$VALIDATOR_KEY_NAME
 EOF
-chmod +x create_validator.sh
-tee unjail_validator.sh > /dev/null <<EOF
+chmod ug+x create_validator_${network}.sh
+tee unjail_validator_${network}.sh > /dev/null <<EOF
 #!/bin/bash
 ${DAEMON_NAME} --home ${DAEMON_HOME} tx slashing unjail \\
-  --from=$VALIDATOR_KEY_NAME
+  --from=$VALIDATOR_KEY_NAME \\
+  --chain-id="$CHAIN_ID" \\
+  --gas auto --gas-adjustment 1.5 --gas-prices 5000000000000mpx
 EOF
-chmod +x unjail_validator.sh
-tee check_validator.sh > /dev/null <<EOF
+chmod ug+x unjail_validator_${network}.sh
+tee check_validator_${network}.sh > /dev/null <<EOF
 #!/bin/bash
 ${DAEMON_NAME} --home ${DAEMON_HOME} query tendermint-validator-set
 EOF
-chmod +x check_validator.sh
-tee start_crossfi.sh > /dev/null <<EOF
+chmod ug+x check_validator_${network}.sh
+tee start_crossfi_${network}.sh > /dev/null <<EOF
 #!/bin/bash
 sudo systemctl daemon-reload
 sudo systemctl enable ${SERVICE_NAME}
 sudo systemctl restart ${SERVICE_NAME}
 EOF
-chmod +x start_crossfi.sh
-tee check_log.sh > /dev/null <<EOF
+chmod ug+x start_crossfi_${network}.sh
+tee check_log_${network}.sh > /dev/null <<EOF
 #!/bin/bash
 journalctl -u ${SERVICE_NAME} -f
 EOF
-chmod +x check_log.sh
+chmod ug+x check_log_${network}.sh
 
 sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF  
 [Unit]
@@ -183,5 +218,5 @@ fi
 
 #Cleanup
 cd ${INSTALLATION_DIR}
-rm -f crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz
+rm -f crossfi-node_0.3.0-prebuild3_linux_amd64.tar.gz mineplex-2-node._v0.1.1_linux_amd64.tar.gz
 rm -f README.md CHANGELOG.md LICENSE readme.md
