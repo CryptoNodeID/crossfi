@@ -42,7 +42,6 @@ else
   SERVICE_NAME=crossfi-mainnet
   CHAIN_ID='mineplex-mainnet-1'
   SNAP_RPC="https://crossfi-mainnet-rpc.cryptonode.id:443"
-  mv mainnet ${DAEMON_HOME}
   if ! grep -q "export DAEMON_NAME=${DAEMON_NAME}" ~/.profile; then
     echo "export DAEMON_NAME=${DAEMON_NAME}" >> ~/.profile
   fi
@@ -61,31 +60,38 @@ else
   source ~/.profile
 fi
 
-mkdir -p ${DAEMON_HOME}/cosmovisor/genesis/bin
-mkdir -p ${DAEMON_HOME}/cosmovisor/upgrades
-
 if ! command -v cosmovisor &> /dev/null; then
     wget https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2Fv1.5.0/cosmovisor-v1.5.0-linux-amd64.tar.gz
     tar -xvzf cosmovisor-v1.5.0-linux-amd64.tar.gz
     rm cosmovisor-v1.5.0-linux-amd64.tar.gz
     mv cosmovisor bin/cosmovisor
+    cp ${INSTALLATION_DIR}/bin/cosmovisor /usr/local/bin/cosmovisor -f
 fi
-if ! grep -q "export DAEMON_NAME=${DAEMON_NAME}" ~/.profile; then
-    echo "export DAEMON_NAME=${DAEMON_NAME}" >> ~/.profile
+
+echo "DAEMON_NAME=$DAEMON_NAME"
+echo "DAEMON_HOME=$DAEMON_HOME"
+echo "DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES"
+echo "DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE"
+echo "DAEMON_LOG_BUFFER_SIZE=$DAEMON_LOG_BUFFER_SIZE"
+echo "Crossfid version: "$(${INSTALLATION_DIR}/bin/${DAEMON_NAME} --home ${DAEMON_HOME} version)
+echo "Chain id: "${CHAIN_ID}
+echo "RPC: "${SNAP_RPC}
+echo "Service name: "${SERVICE_NAME}
+
+LATEST_HEIGHT=$(curl -s $SNAP_RPC/block | jq -r .result.block.header.height);
+BLOCK_HEIGHT=$((LATEST_HEIGHT - 1000));
+TRUST_HASH=$(curl -s "$SNAP_RPC/block?height=$BLOCK_HEIGHT" | jq -r .result.block_id.hash) 
+echo $LATEST_HEIGHT $BLOCK_HEIGHT $TRUST_HASH && sleep 2
+
+read -p "Press enter to continue or Ctrl+C to cancel"
+
+if [ $network == "mainnet" ]; then
+    rm -rf ${DAEMON_HOME}
+    mv mainnet ${DAEMON_HOME}
 fi
-if ! grep -q "export DAEMON_HOME=${DAEMON_HOME}" ~/.profile; then
-    echo "export DAEMON_HOME=${DAEMON_HOME}" >> ~/.profile
-fi
-if ! grep -q "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" ~/.profile; then
-    echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> ~/.profile
-fi
-if ! grep -q "export DAEMON_RESTART_AFTER_UPGRADE=true" ~/.profile; then
-    echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> ~/.profile
-fi
-if ! grep -q "export DAEMON_LOG_BUFFER_SIZE=512" ~/.profile; then
-    echo "export DAEMON_LOG_BUFFER_SIZE=512" >> ~/.profile
-fi
-source ~/.profile
+
+mkdir -p ${DAEMON_HOME}/cosmovisor/genesis/bin
+mkdir -p ${DAEMON_HOME}/cosmovisor/upgrades
 
 sed -i \
   -e 's|^pruning *=.*|pruning = "custom"|' \
@@ -95,7 +101,6 @@ sed -i \
   ${DAEMON_HOME}/config/app.toml
 
 cp ${INSTALLATION_DIR}/bin/${DAEMON_NAME} ${DAEMON_HOME}/cosmovisor/genesis/bin
-sudo ln -s ${INSTALLATION_DIR}/bin/cosmovisor /usr/local/bin/cosmovisor -f
 sudo ln -s ${DAEMON_HOME}/cosmovisor/genesis ${DAEMON_HOME}/cosmovisor/current -f
 sudo ln -s ${DAEMON_HOME}/cosmovisor/current/bin/${DAEMON_NAME} /usr/local/bin/${DAEMON_NAME} -f
 
@@ -113,11 +118,6 @@ else
     ${DAEMON_NAME} --home ${DAEMON_HOME} keys add $VALIDATOR_KEY_NAME
 fi
 ${DAEMON_NAME} --home ${DAEMON_HOME} keys list
-
-LATEST_HEIGHT=$(curl -s $SNAP_RPC/block | jq -r .result.block.header.height);
-BLOCK_HEIGHT=$((LATEST_HEIGHT - 1000));
-TRUST_HASH=$(curl -s "$SNAP_RPC/block?height=$BLOCK_HEIGHT" | jq -r .result.block_id.hash) 
-echo $LATEST_HEIGHT $BLOCK_HEIGHT $TRUST_HASH && sleep 2
 
 # Helper scripts
 mkdir ${INSTALLATION_DIR}/scripts
@@ -184,7 +184,7 @@ EOF
 chmod ug+x start_crossfi_${network}.sh
 tee check_log_${network}.sh > /dev/null <<EOF
 #!/bin/bash
-journalctl -u ${SERVICE_NAME} -f
+sudo journalctl -u ${SERVICE_NAME} -f
 EOF
 chmod ug+x check_log_${network}.sh
 
