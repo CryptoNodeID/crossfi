@@ -104,6 +104,14 @@ cp ${INSTALLATION_DIR}/bin/${DAEMON_NAME} ${DAEMON_HOME}/cosmovisor/genesis/bin
 sudo ln -s ${DAEMON_HOME}/cosmovisor/genesis ${DAEMON_HOME}/cosmovisor/current -f
 sudo ln -s ${DAEMON_HOME}/cosmovisor/current/bin/${DAEMON_NAME} /usr/local/bin/${DAEMON_NAME} -f
 
+sed -i \
+  -e "s|^.*enable *=.*|enable = "true"|" \
+  -e "s|^.*rpc_servers *=.*|rpc_servers = \"$SNAP_RPC,$SNAP_RPC\"|" \
+  -e "s|^.*trust_height *=.*|trust_height = $BLOCK_HEIGHT|" \
+  -e "s|^.*trust_hash *=.*|trust_hash = \"$TRUST_HASH\"|" \
+  -e "s|^.*seeds *=.*|seeds = \"\"|" \
+  ${DAEMON_HOME}/config/config.toml
+
 # Init Crossfi
 ${DAEMON_NAME} --home ${DAEMON_HOME} version
 read -p "Enter validator key name: " VALIDATOR_KEY_NAME
