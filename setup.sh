@@ -126,6 +126,9 @@ else
     ${DAEMON_NAME} --home ${DAEMON_HOME} keys add $VALIDATOR_KEY_NAME
 fi
 ${DAEMON_NAME} --home ${DAEMON_HOME} keys list
+if ! grep -q 'export WALLET='${VALIDATOR_KEY_NAME} ~/.profile; then
+    echo "export WALLET=${VALIDATOR_KEY_NAME}" >> ~/.profile
+fi
 
 # Helper scripts
 mkdir ${INSTALLATION_DIR}/scripts
