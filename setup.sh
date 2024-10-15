@@ -36,11 +36,11 @@ if [ "$network" == "testnet" ]; then
       echo "export DAEMON_LOG_BUFFER_SIZE_TESTNET=512" >> ~/.profile
   fi
 else
-  wget https://github.com/crossfichain/crossfi-node/releases/download/v0.1.1/mineplex-2-node._v0.1.1_linux_amd64.tar.gz && tar -xf mineplex-2-node._v0.1.1_linux_amd64.tar.gz
-  mv mineplex-chaind bin/${DAEMON_NAME}
+  wget https://github.com/crossfichain/crossfi-node/releases/download/v0.3.0/crossfi-node_0.3.0_linux_amd64.tar.gz && tar -xf crossfi-node_0.3.0_linux_amd64.tar.gz
+  mv crossfid bin/${DAEMON_NAME}
   git clone https://github.com/crossfichain/mainnet.git
   SERVICE_NAME=crossfi-mainnet
-  CHAIN_ID='mineplex-mainnet-1'
+  CHAIN_ID='crossfi-mainnet-1'
   SNAP_RPC="https://crossfi-mainnet-rpc.cryptonode.id:443"
   if ! grep -q "export DAEMON_NAME=${DAEMON_NAME}" ~/.profile; then
     echo "export DAEMON_NAME=${DAEMON_NAME}" >> ~/.profile
