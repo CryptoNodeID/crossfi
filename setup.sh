@@ -1,6 +1,6 @@
 #!/bin/bash
 DAEMON_NAME=crossfid
-DAEMON_HOME=$HOME/.mineplex-chain
+DAEMON_HOME=$HOME/.crossfid
 SERVICE_NAME=crossfi-testnet
 INSTALLATION_DIR=$(dirname "$(realpath "$0")")
 SNAP_RPC="https://crossfi-testnet-rpc.cryptonode.id:443"
